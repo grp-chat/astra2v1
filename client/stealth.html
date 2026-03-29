@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stealth Victory - Sanctuary Entry</title>
+    <style>
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: #020205; overflow: hidden;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            flex-direction: column;
+        }
+
+        /* --- 1. Static Starfield (No Movement) --- */
+        #starfield { position: absolute; width: 100vw; height: 100vh; z-index: 1; overflow: hidden; }
+        .star { position: absolute; background: #fff; border-radius: 50%; opacity: 0.6; }
+
+        /* --- 2. THE SANCTUARY PLANET (Slides from Right) --- */
+        #planet {
+            position: absolute;
+            right: -600px; /* Hidden off-right */
+            top: 50%;
+            transform: translateY(-50%);
+            width: 600px; height: 600px;
+            background: radial-gradient(circle at 30% 30%, #4facfe 0%, #00f2fe 25%, #7028e4 65%, #050508 95%);
+            border-radius: 50%;
+            z-index: 5;
+            box-shadow: -30px 0 100px rgba(79, 172, 254, 0.2), inset 40px 0 80px rgba(0,0,0,0.9);
+            opacity: 0;
+            transition: right 7s ease-out, opacity 3s ease-in;
+        }
+
+        /* --- 3. HD ASTRA-2 (Identical Design) --- */
+        #astra2-wrapper {
+            position: relative;
+            z-index: 20;
+            transition: transform 7s cubic-bezier(0.4, 0, 0.2, 1), opacity 6.5s ease-in;
+        }
+
+        #astra2-container {
+            position: relative; width: 420px; height: 140px;
+            animation: ship-bob 6s ease-in-out infinite;
+        }
+        @keyframes ship-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+
+        /* Ship Geometry */
+        .engine-housing {
+            position: absolute; left: 0; top: 35px; width: 90px; height: 70px;
+            background: linear-gradient(90deg, #222, #444); border-radius: 8px 0 0 8px;
+            border: 1px solid #555;
+        }
+        .thruster {
+            position: absolute; left: -18px; width: 35px; height: 28px;
+            background: radial-gradient(circle, #fff 10%, #00eaff 40%, #0044ff 90%);
+            border-radius: 4px; box-shadow: 0 0 15px #00eaff;
+        }
+        .thruster-1 { top: 6px; } .thruster-2 { top: 36px; }
+        .hull {
+            position: absolute; left: 80px; top: 25px; width: 300px; height: 90px;
+            background: linear-gradient(180deg, #666 0%, #333 50%, #222 100%);
+            clip-path: polygon(0% 25%, 75% 0%, 100% 50%, 75% 100%, 0% 75%);
+            border-left: 4px solid #444;
+        }
+        .nav-light { position: absolute; width: 4px; height: 4px; border-radius: 50%; animation: blink 1s infinite; }
+        .light-red { background: red; top: 40px; left: 150px; box-shadow: 0 0 5px red; }
+        .light-yellow { background: yellow; top: 60px; left: 240px; box-shadow: 0 0 5px yellow; animation-delay: 0.5s; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+
+        .bridge {
+            position: absolute; left: 140px; top: 0px; width: 110px; height: 35px; 
+            background: #1a1a1a; clip-path: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%);
+            border: 1px solid #444;
+        }
+        .window {
+            position: absolute; left: 15px; top: 8px; width: 80px; height: 12px;
+            background: linear-gradient(180deg, rgba(0, 234, 255, 0.6), rgba(0, 100, 200, 0.8));
+            border-radius: 2px; box-shadow: 0 0 15px rgba(0, 234, 255, 0.4);
+        }
+
+        /* --- 4. VICTORY ANIMATION SEQUENCE --- */
+        .approaching-planet #planet {
+            right: -100px; /* Slide into view */
+            opacity: 1;
+        }
+
+        .approaching-planet #astra2-wrapper {
+            /* Moves toward the planet, shrinks to 0 (Disappears), and fades out */
+            transform: translateX(450px) translateY(-20px) scale(0);
+            opacity: 0; 
+        }
+
+        #victory-text {
+            margin-top: 50px; z-index: 30;
+            color: white; font-size: 2.5rem; text-transform: uppercase;
+            letter-spacing: 15px; opacity: 0; font-weight: bold;
+            text-shadow: 0 0 30px #00f2fe;
+        }
+
+        #trigger-btn {
+            position: absolute; bottom: 50px; z-index: 200;
+            padding: 15px 35px; background: rgba(0,0,0,0.8); border: 2px solid #00f2fe;
+            color: #00f2fe; cursor: pointer; font-size: 18px; letter-spacing: 3px;
+        }
+    </style>
+</head>
+<body>
+
+    <button id="trigger-btn" onclick="triggerCinematic()">SEEK SANCTUARY</button>
+    
+    <div id="starfield"></div>
+    <div id="planet"></div>
+
+    <div id="astra2-wrapper">
+        <div id="astra2-container">
+            <div class="engine-housing">
+                <div class="thruster thruster-1"></div>
+                <div class="thruster thruster-2"></div>
+            </div>
+            <div class="hull">
+                <div class="nav-light light-red"></div>
+                <div class="nav-light light-yellow"></div>
+            </div>
+            <div class="bridge"><div class="window"></div></div>
+        </div>
+    </div>
+
+    <div id="victory-text">MISSION SUCCESS</div>
+
+    <script>
+        // Generate Static Stars
+        const starfield = document.getElementById('starfield');
+        for (let i = 0; i < 200; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.left = `${Math.random() * 100}vw`; 
+            star.style.top = `${Math.random() * 100}vh`;
+            const size = Math.random() * 2 + 0.5;
+            star.style.width = `${size}px`; 
+            star.style.height = `${size}px`;
+            starfield.appendChild(star);
+        }
+
+        function triggerCinematic() {
+            document.getElementById('trigger-btn').style.display = 'none';
+            document.body.classList.add('approaching-planet');
+
+            // Victory text appears right as the ship vanishes
+            setTimeout(() => {
+                const vt = document.getElementById('victory-text');
+                vt.style.opacity = '1';
+                vt.style.transition = 'opacity 2s ease-in';
+            }, 5500);
+        }
+    </script>
+</body>
+</html>

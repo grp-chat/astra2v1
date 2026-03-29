@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Background</title>
+
+  <style>
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: black;
+      overflow: hidden;
+    }
+
+    /* =========================
+       STARS
+    ========================= */
+
+    .stars {
+      position: fixed;
+      width: 100%;
+      height: 200vh;
+      top: -100vh;
+      left: 0;
+      pointer-events: none;
+    }
+
+    .stars::before {
+      content: "";
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: white;
+    }
+
+    /* Tiny, Slow Background Stars */
+    .layer1::before {
+      box-shadow:
+        10vw 10vh white, 25vw 30vh white, 45vw 15vh white, 65vw 45vh white,
+        85vw 10vh white, 15vw 60vh white, 35vw 85vh white, 55vw 70vh white,
+        75vw 90vh white, 95vw 40vh white, 5vw 20vh white, 50vw 50vh white,
+        12vw 88vh white, 33vw 12vh white, 66vw 77vh white, 99vw 33vh white;
+      opacity: 0.3;
+      animation: move1 100s linear infinite;
+    }
+
+    /* Medium, Mid-speed Stars */
+    .layer2::before {
+      box-shadow: 
+        20vw 30vh white, 40vw 10vh white, 60vw 60vh white, 80vw 25vh white,
+        90vw 80vh white, 10vw 45vh white, 30vw 75vh white, 50vw 15vh white,
+        70vw 50vh white, 10vw 90vh white, 85vw 55vh white, 22vw 18vh white,
+        44vw 88vh white, 66vw 12vh white;
+      opacity: 0.6;
+      animation: move2 40s linear infinite;
+    }
+
+    /* Large, Fast Foreground Stars */
+    .layer3::before {
+      box-shadow:
+        15vw 70vh white, 35vw 40vh white, 70vw 10vh white, 85vw 85vh white,
+        5vw 55vh white, 50vw 80vh white, 95vw 20vh white, 25vw 10vh white,
+        60vw 30vh white, 40vw 90vh white;
+      opacity: 1;
+      animation: move3 8s linear infinite;
+    }
+
+    @keyframes move1 {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(200vh); }
+    }
+
+    @keyframes move2 {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(200vh); }
+    }
+
+    @keyframes move3 {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(200vh); }
+    }
+
+    /* =========================
+       SHIP
+    ========================= */
+
+    .ship {
+      position: absolute;
+      bottom: 30%;
+      left: 50%;
+      transform: translateX(-50%) scale(2);
+      width: 120px;
+      height: 260px;
+
+      animation: float 3s ease-in-out infinite;
+
+      filter:
+        drop-shadow(0 0 6px #6aa2ff)
+        drop-shadow(0 0 12px #3a5eff);
+    }
+
+    @keyframes float {
+      0%, 100% {
+        transform: translateX(-50%) scale(2) translateY(0);
+      }
+      50% {
+        transform: translateX(-50%) scale(2) translateY(-12px);
+      }
+    }
+
+    .nose {
+      width: 0;
+      height: 0;
+      border-left: 40px solid transparent;
+      border-right: 40px solid transparent;
+      border-bottom: 90px solid #dbe8ff;
+      margin: 0 auto;
+      filter:
+        drop-shadow(0 0 4px #6aa2ff)
+        drop-shadow(0 0 8px #3a5eff);
+    }
+
+    .body {
+      width: 70px;
+      height: 140px;
+      margin: 0 auto;
+      border-radius: 35px;
+      background: linear-gradient(180deg, #8fb6ff, #2a3a66);
+      position: relative;
+      box-shadow:
+        inset 0 0 15px rgba(255,255,255,0.2),
+        0 0 10px rgba(120,170,255,0.4);
+    }
+
+    .cockpit {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 35px;
+      height: 55px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #fff, #6aa2ff);
+      box-shadow: 0 0 8px #6aa2ff;
+    }
+
+    .wing {
+      position: absolute;
+      top: 120px;
+      width: 60px;
+      height: 100px;
+      background: linear-gradient(#101a33, #02050f);
+    }
+
+    .left { left: -45px; transform: skewY(25deg); }
+    .right { right: -45px; transform: skewY(-25deg); }
+
+    .engine {
+      width: 30px;
+      height: 50px;
+      margin: 10px auto 0;
+      position: relative;
+    }
+
+    .flame {
+      width: 30px;
+      height: 60px;
+      margin: 0 auto;
+
+      background: radial-gradient(circle, #fff7aa, #ff9900, #ff2200);
+      border-radius: 50%;
+
+      box-shadow:
+        0 0 10px #ff5500,
+        0 0 25px #ff3300,
+        0 0 60px rgba(255,100,0,0.5);
+
+      animation: flame 0.05s infinite alternate;
+    }
+
+    @keyframes flame {
+      0% { transform: scaleY(1); opacity: 0.8; }
+      100% { transform: scaleY(1.6); opacity: 1; }
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="stars layer1"></div>
+  <div class="stars layer2"></div>
+  <div class="stars layer3"></div>
+
+  <div class="ship">
+    <div class="nose"></div>
+    <div class="body">
+      <div class="cockpit"></div>
+    </div>
+    <div class="wing left"></div>
+    <div class="wing right"></div>
+
+    <div class="engine">
+      <div class="flame"></div>
+    </div>
+  </div>
+
+</body>
+</html>

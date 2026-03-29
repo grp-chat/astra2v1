@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Operation: Escape Astra-2</title>
+  <link rel="stylesheet" href="styles/style.css" />
+</head>
+<body>
+
+  <iframe id="bg-iframe" src="ship-bg.html"></iframe>
+
+  <div id="mainMenu" class="screen active">
+    <h1>Operation: Escape Astra-2</h1>
+    <h2>Main Menu</h2>
+    <button onclick="window.open('intro.html', '_blank')" style="border-color: #00eaff; color: #00eaff;">Initial Briefing</button>
+    <button onclick="showScreen('gameSettings')">Game Settings</button>
+    <button id="dashboardBtn" disabled onclick="showScreen('dashboardWrapper')">Dashboard</button>
+    <!-- <button id="actionBtn" disabled onclick="showScreen('actionPanel')">Action Panel</button> -->
+     <button id="actionBtn" disabled onclick="openActionPanel()">Action Panel</button>
+    <button id="auditBtn" disabled onclick="showAudit()">Audit (Host Only)</button>
+  </div>
+
+  <div id="gameSettings" class="screen">
+    <h1>Game Settings</h1>
+    <label for="playerInput">Enter Player Names</label>
+    <textarea id="playerInput" rows="6" placeholder="Alice, Bob, Charlie"></textarea>
+    <button onclick="addMultiplePlayers()">Add Players</button>
+    <div id="playerCount" class="player-badge">Players: 0</div>
+    <div id="playerList" style="margin-top:12px;"></div>
+    <div style="display:flex; gap:20px; margin-top:14px;">
+      <div style="flex:1;">
+        <label for="roundCount">Total Rounds</label>
+        <input type="number" id="roundCount" value="3" min="1">
+      </div>
+      <div style="flex:1;">
+        <label for="alienCount">Total Aliens</label>
+        <input type="number" id="alienCount" value="1" min="0">
+      </div>
+    </div>
+    <button onclick="startGame()">Start Game</button>
+    <button id="revealBtn" disabled onclick="startReveal()">Reveal Player Identities</button>
+    <button onclick="showScreen('mainMenu')">Back</button>
+  </div>
+
+  <div id="identityReveal" class="screen">
+    <h1 id="revealHeader">Player Reveal</h1>
+    <div id="revealCard" style="text-align:center;">
+      <div id="revealName" style="font-size:44px; font-weight:700;">PLAYER NAME</div>
+      <div id="revealRole" style="font-size:36px; visibility:hidden;">ROLE</div>
+      <button id="showIdentityBtn" onclick="showIdentity()">Show Identity</button>
+      <button id="nextRevealBtn" onclick="nextReveal()" disabled>Next Player</button>
+      <button onclick="endReveal()">Return to Menu</button>
+    </div>
+  </div>
+
+  <div id="auditScreen" class="screen">
+  <h1>Ship Systems Audit</h1>
+  
+  <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+    <button onclick="requestReset('SOFT')" style="background: #e67e22; flex: 1; font-size: 12px;">Soft Reset</button>
+    <button onclick="requestReset('HARD')" style="background: #c0392b; flex: 1; font-size: 12px;">Hard Reset</button>
+  </div>
+
+  <hr style="border: 0.5px solid #444;">
+
+  <h3>Personnel & Roles</h3>
+  <div id="auditPlayerList" style="max-height: 250px; overflow-y: auto; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 5px;">
+      </div>
+
+  <button onclick="saveAuditChanges()" style="background: #27ae60; margin-top: 15px; width: 100%;">💾 Save Manual Changes</button>
+  <button onclick="showScreen('mainMenu')" style="margin-top: 10px;">Back to Menu</button>
+</div>
+
+  <div id="dashboardWrapper" class="screen">
+    <iframe id="dashboardFrame" src="dashboard.html" style="width:100%; height:100%; border:none; background:transparent;" allowtransparency="true"></iframe>
+  </div>
+
+  <div id="actionPanel" class="screen">
+    <h1>Action Panel</h1>
+    <button onclick="showScreen('mainMenu')">Back</button>
+  </div>
+
+  <div id="actionWrapper" class="screen" style="display:none; width:100%; height:100%;">
+    <iframe id="actionFrame" src="action.html" style="width:100%; height:100%; border:none; background:transparent;"></iframe>
+</div>
+
+<div class="branding">
+  <div class="line-1-container">
+    <p class="type-line-1">A <span class="brand-highlight">Final Frontier</span> Saga</p>
+    <div class="underline"></div>
+  </div>
+  <p class="type-line-2">by Coach Andrew</p>
+</div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/core.js"></script>
+  <script src="js/reveal.js"></script>
+  <script src="js/index.js"></script>
+</body>
+</html>

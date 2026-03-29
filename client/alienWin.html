@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alien Victory - Shard Interceptors</title>
+    <style>
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: #050208; overflow: hidden;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            flex-direction: column;
+        }
+
+        /* --- 1. Starfield (RETAINED) --- */
+        #starfield { position: absolute; width: 100vw; height: 100vh; z-index: 1; overflow: hidden; }
+        .star { position: absolute; background: #fff; border-radius: 50%; animation: space-drift linear infinite; }
+        @keyframes space-drift { from { transform: translateX(120vw); } to { transform: translateX(-120vw); } }
+
+        /* --- 2. HD ASTRA-2 (RETAINED) --- */
+        #astra2-container {
+            position: relative; width: 420px; height: 140px;
+            z-index: 20; animation: ship-bob 6s ease-in-out infinite;
+        }
+        @keyframes ship-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+
+        .engine-housing {
+            position: absolute; left: 0; top: 35px; width: 90px; height: 70px;
+            background: linear-gradient(90deg, #222, #444); border-radius: 8px 0 0 8px;
+            border: 1px solid #555;
+        }
+        .thruster {
+            position: absolute; left: -18px; width: 35px; height: 28px;
+            background: radial-gradient(circle, #fff 10%, #00eaff 40%, #0044ff 90%);
+            border-radius: 4px; box-shadow: 0 0 15px #00eaff;
+        }
+        .thruster-1 { top: 6px; } .thruster-2 { top: 36px; }
+        .hull {
+            position: absolute; left: 80px; top: 25px; width: 300px; height: 90px;
+            background: linear-gradient(180deg, #666 0%, #333 50%, #222 100%);
+            clip-path: polygon(0% 25%, 75% 0%, 100% 50%, 75% 100%, 0% 75%);
+            border-left: 4px solid #444;
+        }
+        .bridge {
+            position: absolute; left: 140px; top: 0px; width: 110px; height: 35px; 
+            background: #1a1a1a; clip-path: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%);
+        }
+        .window {
+            position: absolute; left: 15px; top: 8px; width: 80px; height: 12px;
+            background: linear-gradient(180deg, rgba(0, 234, 255, 0.6), rgba(0, 100, 200, 0.8));
+            border-radius: 2px;
+        }
+
+        /* --- 3. THE SHARD INTERCEPTORS --- */
+        .ufo {
+            position: absolute; width: 80px; height: 80px;
+            z-index: 30; opacity: 0; left: -200px;
+        }
+
+        /* Central Pulsing Core */
+        .ufo-core {
+            position: absolute; left: 30px; top: 30px;
+            width: 20px; height: 20px;
+            background: #fff; border-radius: 50%;
+            box-shadow: 0 0 20px #00ff44, 0 0 40px #00ff44;
+            animation: alien-pulse 0.8s infinite alternate;
+            z-index: 5;
+        }
+
+        /* Floating Shards (Triangular sharp pieces) */
+        .shard {
+            position: absolute; background: #111;
+            border: 1px solid #00ff44;
+            filter: drop-shadow(0 0 5px #00ff44);
+            transition: transform 0.3s ease;
+        }
+        .shard-main {
+            width: 40px; height: 20px; left: 45px; top: 30px;
+            clip-path: polygon(0% 50%, 100% 0%, 80% 50%, 100% 100%);
+        }
+        .shard-top {
+            width: 30px; height: 15px; left: 20px; top: 5px;
+            clip-path: polygon(100% 100%, 0% 0%, 50% 100%);
+            transform: rotate(-20deg);
+        }
+        .shard-bottom {
+            width: 30px; height: 15px; left: 20px; top: 60px;
+            clip-path: polygon(100% 0%, 0% 100%, 50% 0%);
+            transform: rotate(20deg);
+        }
+
+        @keyframes alien-pulse { from { opacity: 0.5; transform: scale(0.8); } to { opacity: 1; transform: scale(1.2); } }
+
+        /* --- 4. AMBUSH POSITIONS --- */
+        .alien-ambush .ufo { opacity: 1; }
+        .alien-ambush .ufo-1 { animation: ufo-slide-1 1.8s ease-out forwards; }
+        @keyframes ufo-slide-1 { to { left: 50%; transform: translate(-50%, -180px); } }
+        .alien-ambush .ufo-2 { animation: ufo-slide-2 2.3s ease-out forwards; }
+        @keyframes ufo-slide-2 { to { left: 50%; transform: translate(-280px, -110px); } }
+        .alien-ambush .ufo-3 { animation: ufo-slide-3 2.1s ease-out forwards; }
+        @keyframes ufo-slide-3 { to { left: 50%; transform: translate(180px, -110px); } }
+
+        /* --- 5. LOWERED TEXT --- */
+        #victory-text {
+            position: absolute; bottom: 100px; z-index: 100;
+            color: #ff0044; font-size: 3.5rem; text-transform: uppercase;
+            letter-spacing: 25px; opacity: 0; font-weight: bold;
+            text-shadow: 0 0 50px #ff0044;
+        }
+
+        #trigger-btn {
+            position: absolute; bottom: 50px; z-index: 200;
+            padding: 15px 35px; background: rgba(0,0,0,0.8); border: 2px solid #ff0044;
+            color: #ff0044; cursor: pointer; font-size: 18px; letter-spacing: 3px;
+        }
+    </style>
+</head>
+<body>
+
+    <button id="trigger-btn" onclick="triggerAmbush()">ENGAGE HYPERDRIVE</button>
+    <div id="starfield"></div>
+
+    <div id="astra2-container">
+        <div class="engine-housing"><div class="thruster thruster-1"></div><div class="thruster thruster-2"></div></div>
+        <div class="hull"></div>
+        <div class="bridge"><div class="window"></div></div>
+    </div>
+
+    <div class="ufo ufo-1">
+        <div class="ufo-core"></div>
+        <div class="shard shard-main"></div><div class="shard shard-top"></div><div class="shard shard-bottom"></div>
+    </div>
+    <div class="ufo ufo-2">
+        <div class="ufo-core"></div>
+        <div class="shard shard-main"></div><div class="shard shard-top"></div><div class="shard shard-bottom"></div>
+    </div>
+    <div class="ufo ufo-3">
+        <div class="ufo-core"></div>
+        <div class="shard shard-main"></div><div class="shard shard-top"></div><div class="shard shard-bottom"></div>
+    </div>
+
+    <div id="victory-text">ALIEN VICTORY</div>
+
+    <script>
+        const starfield = document.getElementById('starfield');
+        for (let i = 0; i < 160; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.left = '0px'; 
+            star.style.top = `${Math.random() * 100}vh`;
+            const size = Math.random() * 2 + 0.5;
+            star.style.width = `${size}px`; star.style.height = `${size}px`;
+            const duration = Math.random() * 12 + 6;
+            star.style.animationDuration = `${duration}s`;
+            star.style.animationDelay = `${Math.random() * -duration}s`;
+            starfield.appendChild(star);
+        }
+
+        function triggerAmbush() {
+            document.getElementById('trigger-btn').style.display = 'none';
+            document.body.classList.add('alien-ambush');
+
+            document.querySelectorAll('.star').forEach(s => {
+                s.style.transition = "opacity 3s ease";
+                s.style.opacity = "0.2";
+            });
+
+            setTimeout(() => {
+                const vt = document.getElementById('victory-text');
+                vt.style.opacity = '1';
+                vt.style.transition = 'opacity 1s ease-in';
+            }, 2500);
+        }
+    </script>
+</body>
+</html>

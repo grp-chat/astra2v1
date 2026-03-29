@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Astra-2: Tactical Briefing</title>
+    <style>
+        :root {
+            --color-ui: #00eaff;
+            --color-warning: #fff200;
+            --color-meta: #a0a0a0;
+            --color-bg: #020205;
+        }
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: var(--color-bg); overflow: hidden;
+            display: flex; justify-content: center; align-items: flex-end;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        /* --- Background Stars --- */
+        #starfield { position: absolute; width: 100vw; height: 100vh; z-index: 1; top: 0; left: 0; pointer-events: none; }
+        .star { position: absolute; background: #fff; border-radius: 50%; animation: star-fall linear infinite; }
+        @keyframes star-fall { from { transform: translateY(-10vh); } to { transform: translateY(110vh); } }
+
+        /* --- Astra-2 Ship --- */
+        #astra2-wrapper {
+            position: relative; z-index: 10; margin-bottom: 15vh; 
+            animation: high-action-float 5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+        @keyframes high-action-float {
+            0%, 100% { transform: translateY(30px) rotate(0deg); }
+            50% { transform: translateY(-30px) rotate(0.8deg) scale(1.02); }
+        }
+        #astra2-top { position: relative; width: 180px; height: 280px; }
+        .hull-main { position: absolute; width: 100%; height: 100%; background: linear-gradient(90deg, #333, #555 50%, #333); clip-path: polygon(50% 0%, 100% 30%, 85% 100%, 15% 100%, 0% 30%); }
+        .thruster-glow { position: absolute; bottom: -15px; width: 35px; height: 15px; background: radial-gradient(ellipse at top, #fff, var(--color-ui) 50%, transparent 90%); box-shadow: 0 10px 40px var(--color-ui); border-radius: 0 0 10px 10px; animation: engine-flicker 0.1s infinite alternate; }
+        @keyframes engine-flicker { from { opacity: 0.6; transform: scaleY(1); } to { opacity: 1; transform: scaleY(1.4); } }
+        .tg-1 { left: 40px; } .tg-2 { right: 40px; }
+        .wing { position: absolute; bottom: 20px; width: 50px; height: 120px; background: #444; z-index: -1; }
+        .wing-left { left: -30px; clip-path: polygon(100% 0%, 100% 100%, 0% 80%, 0% 20%); }
+        .wing-right { right: -30px; clip-path: polygon(0% 0%, 0% 100%, 100% 80%, 100% 20%); }
+        .cockpit-top { position: absolute; top: 40px; left: 50%; transform: translateX(-50%); width: 60px; height: 90px; background: #1a1a1a; clip-path: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%); }
+        .glass-top { position: absolute; top: 10px; left: 5px; width: 50px; height: 40px; background: linear-gradient(180deg, rgba(0,234,255,0.3), rgba(0,100,200,0.6)); clip-path: polygon(15% 0%, 85% 0%, 100% 100%, 0% 100%); }
+
+        /* --- Text Styling --- */
+        #intro-container {
+            position: absolute; top: 12vh; left: 10vw; width: 80vw; max-width: 900px;
+            text-align: left; z-index: 110; color: #fff; font-size: 1.3rem; line-height: 1.6;
+            text-shadow: 0 0 10px #000; pointer-events: none;
+        }
+        .paragraph { display: block; margin-bottom: 10px; min-height: 1.2em; }
+        .tactical-yellow { color: var(--color-warning); font-weight: bold; text-shadow: 0 0 10px rgba(255, 242, 0, 0.4); }
+        .metadata-grey { color: var(--color-meta); font-size: 1.1rem; opacity: 0.8; }
+        #master-cursor { display: inline-block; width: 10px; height: 1.3rem; background: var(--color-ui); animation: cursor-blink 0.8s infinite; vertical-align: middle; }
+        @keyframes cursor-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+        /* --- UI Overlay --- */
+        #ui-layer { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; z-index: 200; }
+        .menu-btn { background: rgba(0, 234, 255, 0.1); border: 1px solid var(--color-ui); color: var(--color-ui); padding: 15px 40px; font-family: inherit; font-size: 1.1rem; cursor: pointer; text-transform: uppercase; letter-spacing: 4px; transition: 0.3s; }
+        .menu-btn:hover { background: var(--color-ui); color: #000; box-shadow: 0 0 25px var(--color-ui); }
+    </style>
+</head>
+<body>
+    <div id="starfield"></div>
+    <div id="ui-layer">
+        <button class="menu-btn" id="startBtn" onclick="beginBriefing()">Begin Briefing</button>
+    </div>
+    <div id="intro-container"></div>
+    
+    <div id="astra2-wrapper">
+        <div id="astra2-top">
+            <div class="thruster-glow tg-1"></div>
+            <div class="thruster-glow tg-2"></div>
+            <div class="wing wing-left"></div>
+            <div class="wing wing-right"></div>
+            <div class="hull-main"></div>
+            <div class="cockpit-top"><div class="glass-top"></div></div>
+        </div>
+    </div>
+
+    <script>
+        const script = [
+            "[Log Entry: Deep Space Date 3042.8]", "",
+            "The Astra-2 is in possession of a a relic,", "WAIT:2000", "of immense power,", "WAIT:2000", "recovered from a planet far way...", "",
+            "Intercepted transmissions confirms,", "WAIT:2000", "that an alien fleet has marked our position!", "",
+            "They are closing in! They want the relic..!", "",
+            "And the threat...", "WAIT:2000", "Isn't just outside...", "",
+            "Our internal sensors...", "WAIT:1000", "Have detected a neural breach...", "",
+            "Several crew members...", "WAIT:1000", "Have been...", "WAIT:2000", "Compromised...", "",
+            "By alien mind control...!", "",
+            "They look like us.", "WAIT:1000", "They act like us.", "WAIT:1000", "But their loyalty has been erased...", "",
+            "We need to fly to safety...", "WAIT:2000", "...And save our crew from the shadows...", "",
+            "Astra-2 must reach to safety...", "WAIT:2000", "Through one of these protocols:", "",
+            "1. Initiate Hyperdrive to escape.", "WAIT:2000", "2. Signal for help of the Galactic Federation fleet.", "WAIT:2000", "3. Relocate to a planet with an atmosphere that will neutralize the aliens.", "WAIT:2000", "",
+            "Time is running out...", "CLEAR:2000",
+            "We need to act...", "WAIT:2000", "Fast...!", "CLEAR:2000",
+            "[End Transmission]"
+        ];
+
+        // Starfield setup
+        const sf = document.getElementById('starfield');
+        for(let i=0; i<100; i++){
+            let s=document.createElement('div'); s.className='star';
+            s.style.left=Math.random()*100+'vw'; s.style.top=Math.random()*-100+'vh';
+            let sz=Math.random()*2; s.style.width=sz+'px'; s.style.height=sz+'px';
+            s.style.animationDuration=(Math.random()*2+1)+'s'; s.style.animationDelay=Math.random()*-5+'s';
+            sf.appendChild(s);
+        }
+
+        async function beginBriefing(){
+            document.getElementById('ui-layer').style.display='none';
+            const container = document.getElementById('intro-container');
+            const cursor = document.createElement('span'); cursor.id="master-cursor"; container.appendChild(cursor);
+
+            for (const line of script) {
+                if (line === "") { 
+                    await new Promise(r => setTimeout(r, 4000)); 
+                    clear(container, cursor); 
+                }
+                else if (line.startsWith("CLEAR:")) { 
+                    await new Promise(r => setTimeout(r, parseInt(line.split(":")[1]))); 
+                    clear(container, cursor); 
+                }
+                else if (line.startsWith("WAIT:")) { 
+                    await new Promise(r => setTimeout(r, parseInt(line.split(":")[1]))); 
+                }
+                else {
+                    const p = document.createElement('div'); p.className="paragraph";
+                    const span = document.createElement('span'); 
+                    if(/^[1-3]\./.test(line)) span.className='tactical-yellow';
+                    if(line.startsWith("[")) span.className='metadata-grey';
+                    p.appendChild(span); p.appendChild(cursor); container.appendChild(p);
+                    for(let char of line){ 
+                        span.innerHTML+=char; 
+                        await new Promise(r=>setTimeout(r,45)); 
+                    }
+                }
+            }
+            
+            // Show End Button
+            const ui = document.getElementById('ui-layer');
+            ui.innerHTML = '<button class="menu-btn" onclick="window.close()">Start Game</button>';
+            ui.style.display = 'block';
+        }
+
+        function clear(c, cur){ 
+            c.querySelectorAll('.paragraph').forEach(p=>p.remove()); 
+            c.appendChild(cur); 
+        }
+    </script>
+</body>
+</html>

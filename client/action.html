@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Astra-2 Tactical Terminal</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        :root {
+            /* THE MASTER SWITCHES - Change here to update everything instantly */
+            --color-speed: #00B3FF;
+            /* Neon Azure (Your new Blue) */
+            --color-signal: #00ff00;
+            /* Neon Green */
+            --color-stealth: #aa00ff;
+            /* Vivid Purple */
+            --color-threat: #ff4d4d;
+            /* Red / Warning */
+            --color-ui: #00eaff;
+            /* Base Cyan UI */
+            --color-alien: #FFDAB9;
+            /* Or for a neon look: #FF8C00 */
+        }
+
+        body {
+            margin: 0;
+            padding: 10px;
+            background: #000;
+            color: var(--color-ui);
+            font-family: 'Courier New', monospace;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        #lobby-screen {
+            display: flex;
+            gap: 15px;
+            flex: 1;
+            padding: 10px;
+        }
+
+        .column {
+            flex: 1;
+            border: 2px solid var(--color-ui);
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            background: rgba(0, 234, 255, 0.05);
+        }
+
+        .column h3 {
+            text-align: center;
+            border-bottom: 1px solid var(--color-ui);
+            padding-bottom: 8px;
+            margin: 0 0 10px 0;
+            font-size: 0.9rem;
+        }
+
+        .player-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            overflow-y: auto;
+        }
+
+        .player-btn,
+        .action-btn {
+            background: rgba(0, 234, 255, 0.1);
+            border: 1px solid var(--color-ui);
+            color: var(--color-ui);
+            font-family: inherit;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        .player-btn {
+            padding: 12px;
+            font-size: 1rem;
+        }
+
+        .player-btn:hover {
+            background: var(--color-ui);
+            color: #000;
+        }
+
+        .player-finished {
+            padding: 12px;
+            border: 1px solid rgba(0, 234, 255, 0.2);
+            color: rgba(0, 234, 255, 0.3);
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        #action-screen {
+            display: none;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .header-box {
+            border: 1px solid var(--color-ui);
+            padding: 10px;
+            margin-bottom: 10px;
+            background: rgba(0, 234, 255, 0.05);
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .occupant-bar {
+            font-size: 0.75rem;
+            border-top: 1px solid rgba(0, 234, 255, 0.2);
+            padding-top: 5px;
+            color: var(--color-ui);
+            text-transform: uppercase;
+        }
+
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 10px;
+            flex: 1;
+        }
+
+        .action-btn {
+            font-size: 0.8rem;
+            padding: 5px;
+            transition: transform 0.1s;
+        }
+
+        .action-btn:active {
+            transform: scale(0.95);
+            background: #fff;
+            color: #000;
+        }
+
+        .action-btn.blank {
+            border-color: rgba(0, 234, 255, 0.1) !important;
+            color: rgba(0, 234, 255, 0.1) !important;
+            cursor: default;
+            pointer-events: none;
+        }
+
+        .action-btn.petrified-skip {
+            border: 2px solid var(--color-threat) !important;
+            color: var(--color-threat) !important;
+            background: rgba(255, 77, 77, 0.1);
+        }
+
+        .action-btn.sabotage-btn {
+            border-style: dashed !important;
+            font-weight: bold;
+        }
+
+        #move-overlay {
+            position: fixed;
+            top: 10%;
+            left: 0;
+            width: 100%;
+            height: 90%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .exit-link {
+            text-align: center;
+            margin-top: 10px;
+            color: var(--color-threat);
+            cursor: pointer;
+            font-size: 10px;
+            text-decoration: underline;
+        }
+
+        .occupant-bar {
+            font-size: 0.75rem;
+            border-top: 1px solid rgba(0, 234, 255, 0.2);
+            padding-top: 5px;
+            color: var(--color-ui);
+            text-transform: uppercase;
+            /* NEW: This spreads the vision and alien team apart */
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .alien-team-display {
+            color: var(--color-alien);
+            font-weight: bold;
+            text-shadow: 0 0 8px rgba(255, 218, 185, 0.4);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="lobby-screen">
+        <div class="column">
+            <h3>[ WAITING ]</h3>
+            <div id="waiting-list" class="player-list"></div>
+        </div>
+        <div class="column">
+            <h3>[ FINISHED ]</h3>
+            <div id="finished-list" class="player-list"></div>
+        </div>
+        <div style="position: absolute; bottom: 10px; right: 20px;" onclick="exitTerminal()" class="exit-link">
+            BACK TO MAIN MENU</div>
+    </div>
+
+    <div id="action-screen">
+        <div class="header-box">
+            <div class="header-top">
+                <span id="user-id" style="font-weight:bold;">USER: ---</span>
+                <span id="loc-id">LOC: ---</span>
+            </div>
+            <div id="room-occupants" class="occupant-bar">SCANNING...</div>
+        </div>
+        <div class="action-grid" id="grid"></div>
+        <div class="exit-link" onclick="backToLobby()">GO BACK</div>
+    </div>
+
+    <div id="move-overlay">
+        <h3 id="overlay-title">SELECT TARGET</h3>
+        <div id="move-options" style="display:flex; flex-wrap:wrap; justify-content:center; gap:10px;"></div>
+        <button onclick="closeMove()"
+            style="margin-top:20px; color:var(--color-threat); background:none; border:1px solid var(--color-threat); padding:10px; cursor:pointer;">BACK</button>
+    </div>
+
+    <script>
+        const socket = io();
+        let activePlayer = "";
+
+        socket.on("STATE_UPDATE", (state) => {
+            if (state.turnData) {
+                const waitingDiv = document.getElementById("waiting-list");
+                const finishedDiv = document.getElementById("finished-list");
+                waitingDiv.innerHTML = ""; finishedDiv.innerHTML = "";
+
+                state.turnData.waiting.forEach(name => {
+                    const btn = document.createElement("button");
+                    btn.className = "player-btn";
+                    btn.textContent = name;
+                    btn.onclick = () => { activePlayer = name; socket.emit("SELECT_PLAYER", name); };
+                    waitingDiv.appendChild(btn);
+                });
+
+                state.turnData.finished.forEach(name => {
+                    const div = document.createElement("div");
+                    div.className = "player-finished";
+                    div.textContent = name + " [OK]";
+                    finishedDiv.appendChild(div);
+                });
+            }
+        });
+
+        socket.on("PLAYER_SCREEN_LOAD", (data) => {
+            document.getElementById("lobby-screen").style.display = "none";
+            document.getElementById("action-screen").style.display = "flex";
+
+            const userIdSpan = document.getElementById("user-id");
+            userIdSpan.textContent = `USER: ${data.playerName.toUpperCase()}${data.isPetrified ? ' [FROZEN]' : ''}`;
+
+            // This now uses your Master Speed Color (Neon Azure) for the active user name
+            userIdSpan.style.color = data.isPetrified ? "var(--color-threat)" : "var(--color-speed)";
+
+            document.getElementById("loc-id").textContent = `LOC: ${data.location}`;
+
+            // --- FIX STARTS HERE ---
+            const occupantDiv = document.getElementById("room-occupants");
+
+            // Create the Vision string
+            const visionHTML = (data.roomMates.length > 0)
+                ? `<span style="color: var(--color-ui);">VISION:</span> ${data.roomMates.join(", ").toUpperCase()}`
+                : `<span style="color: #666;">VISION: NO LIFEFORMS</span>`;
+
+            // Create the Alien Team string (only if user is alien)
+            let alienHTML = "";
+            if (data.isAlien && data.alienTeam) {
+                alienHTML = `<span class="alien-team-display">ALIENS: ${data.alienTeam.join(", ")}</span>`;
+            }
+
+            // Apply to the div
+            occupantDiv.innerHTML = `<div>${visionHTML}</div><div>${alienHTML}</div>`;
+            // fix ends here
+
+            // const occupantDiv = document.getElementById("room-occupants");
+            occupantDiv.innerHTML = `
+                <div>${visionHTML}</div>
+                <div>${alienHTML}</div>`;
+            // occupantDiv.innerHTML = (data.roomMates.length > 0)
+            //     ? `<span style="color: var(--color-ui);">RANGE OF VISION:</span> ${data.roomMates.join(", ").toUpperCase()}`
+            //     : `<span style="color: #888;">RANGE OF VISION: NO LIFEFORMS</span>`;
+
+            const grid = document.getElementById("grid");
+            grid.innerHTML = "";
+
+            data.buttons.forEach(btnData => {
+                const btn = document.createElement("button");
+                btn.className = "action-btn";
+
+                if (typeof btnData === "string") {
+                    btn.textContent = (btnData === "BLANK") ? "---" : btnData;
+
+                    if (btnData === "BLANK") {
+                        btn.classList.add("blank");
+                    } else if (btnData === "MOVE") {
+                        btn.onclick = () => showTargetOverlay("SELECT DESTINATION", data.adjacentRooms, (r) => {
+                            submitAction("MOVE", { targetRoom: r });
+                        });
+                    } else if (btnData === "SKIP") {
+                        if (data.isPetrified) {
+                            btn.textContent = "RECOVER";
+                            btn.classList.add("petrified-skip");
+                        }
+                        btn.onclick = () => submitAction("SKIP");
+                    } else if (btnData === "PETRIFY") {
+                        btn.style.color = btn.style.borderColor = "var(--color-threat)";
+                        btn.onclick = () => {
+                            if (!data.roomMates.length) {
+                                submitAction("PETRIFY");
+                            } else {
+                                showTargetOverlay("SELECT VICTIM", data.roomMates, (v) => {
+                                    submitAction("PETRIFY", { targetPlayer: v });
+                                });
+                            }
+                        };
+                    }
+                }
+                else {
+                    const isSab = !!btnData.isSabotage;
+                    btn.textContent = isSab ? `SAB: ${btnData.name}` : btnData.name;
+                    if (isSab) btn.classList.add("sabotage-btn");
+
+                    if (btnData.color) {
+                        btn.style.color = btnData.color;
+                        btn.style.border = `2px ${isSab ? 'dashed' : 'solid'} ${btnData.color}`;
+                    }
+
+                    btn.onclick = () => {
+                        submitAction(isSab ? "SABOTAGE" : "TASK", {
+                            taskName: btnData.name,
+                            taskType: btnData.type
+                        });
+                    };
+                }
+                grid.appendChild(btn);
+            });
+        });
+
+        function submitAction(type, extraData = {}) {
+            socket.emit("SUBMIT_ACTION", {
+                playerName: activePlayer,
+                actionType: type,
+                ...extraData
+            });
+            backToLobby();
+        }
+
+        function showTargetOverlay(title, options, callback) {
+            document.getElementById("move-overlay").style.display = "flex";
+            document.getElementById("overlay-title").textContent = title;
+            const container = document.getElementById("move-options");
+            container.innerHTML = "";
+
+            options.forEach(item => {
+                const b = document.createElement("button");
+                b.className = "action-btn";
+                b.style.padding = "15px 20px";
+                b.textContent = item;
+                b.onclick = () => {
+                    callback(item);
+                    closeMove();
+                };
+                container.appendChild(b);
+            });
+        }
+
+        function backToLobby() {
+            closeMove();
+            document.getElementById("action-screen").style.display = "none";
+            document.getElementById("lobby-screen").style.display = "flex";
+        }
+
+        function closeMove() {
+            document.getElementById("move-overlay").style.display = "none";
+        }
+
+        function exitTerminal() {
+            window.parent.postMessage("CLOSE_ACTION", "*");
+        }
+    </script>
+</body>
+
+</html>

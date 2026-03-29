@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Astra-2 Tactical Dashboard</title>
+    <style>
+        :root {
+            --color-speed: #00B3FF;
+            --color-signal: #00ff00;
+            --color-stealth: #aa00ff;
+            --color-threat: #ff4d4d;
+            --color-ui: #00eaff;
+        }
+
+        /* Custom Tactical Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 234, 255, 0.05);
+            /* Very faint UI color */
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 234, 255, 0.3);
+            /* Semi-transparent UI color */
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 234, 255, 0.6);
+            /* Brightens when hovering */
+            box-shadow: 0 0 8px var(--color-ui);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: transparent;
+            font-family: 'Courier New', Courier, monospace;
+            color: var(--color-ui);
+        }
+
+        .dashboard-container {
+            display: flex;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 15, 30, 0.1);
+            border: 2px solid var(--color-ui);
+            box-sizing: border-box;
+            overflow: hidden;
+            backdrop-filter: blur(1px);
+        }
+
+        #schematics-panel {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 50%;
+            height: 100%;
+            background: rgba(10, 30, 50, 0.9);
+            backdrop-filter: blur(10px);
+            border-left: 2px solid var(--color-ui);
+            z-index: 500;
+            transform: translateX(100%);
+            transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #schematics-panel.open {
+            transform: translateX(0);
+        }
+
+        .schematic-trigger {
+            position: absolute;
+            left: -25px;
+            top: 280px;
+            width: 25px;
+            height: 110px;
+            background: rgba(0, 234, 255, 0.2);
+            border: 1px solid var(--color-ui);
+            border-right: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: var(--color-ui);
+            text-transform: uppercase;
+        }
+
+        /* LOG STYLING */
+        .log-section-header {
+            font-weight: bold;
+            margin: 20px 0 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 5px;
+            font-size: 15px;
+        }
+
+        .task-item {
+            font-size: 18px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .task-name {
+            color: #fff;
+        }
+
+        .task-loc {
+            color: var(--color-ui);
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .task-done {
+            color: #fff;
+            background: rgba(0, 255, 0, 0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        /* MAP PANEL STYLING */
+        .map-panel {
+            flex: 0 0 65%;
+            border-right: 1px solid rgba(0, 234, 255, 0.3);
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        .map-title {
+            font-size: 2.5rem;
+            letter-spacing: 15px;
+            margin: 15px 0;
+            text-shadow: 0 0 15px var(--color-ui);
+            font-weight: 300;
+            text-transform: uppercase;
+            text-align: center;
+        }
+
+        /* NEW MAP CONTAINER LOGIC */
+        .ship-grid-container {
+            flex: 1;
+            position: relative;
+            /* Essential for absolute positioning of rooms */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .ship-map {
+            position: relative;
+            width: 800px;
+            /* Base width for coordinates */
+            height: 600px;
+            /* Base height for coordinates */
+            transform: scale(0.85);
+            /* Adjust scale to fit panel if needed */
+        }
+
+        .room {
+            position: absolute;
+            border: 1px solid rgba(0, 234, 255, 0.25);
+            background: rgba(0, 234, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 13px;
+            font-weight: bold;
+            box-sizing: border-box;
+            transition: background 0.3s;
+        }
+
+        .room:hover {
+            background: rgba(0, 234, 255, 0.15);
+        }
+
+        /* DATA PANEL STYLING */
+        .data-panel {
+            flex: 0 0 35%;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            box-sizing: border-box;
+            gap: 8px;
+        }
+
+        .section-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .header {
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            margin-bottom: 4px;
+            border-bottom: 1px solid rgba(0, 234, 255, 0.4);
+            text-transform: uppercase;
+        }
+
+        .log-display {
+            flex-grow: 1;
+            border: 1px solid rgba(0, 234, 255, 0.15);
+            padding: 10px;
+            background: rgba(0, 20, 40, 0.2);
+            font-size: 15px;
+            line-height: 1.4;
+            overflow-y: auto;
+        }
+
+        .progress-container {
+            margin-bottom: 12px;
+        }
+
+        .bar-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 9px;
+            margin-bottom: 4px;
+            font-weight: bold;
+        }
+
+        .bar-bg {
+            width: 100%;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        .fill-speed {
+            background: var(--color-speed);
+            box-shadow: 0 0 10px var(--color-speed);
+        }
+
+        .fill-signal {
+            background: var(--color-signal);
+            box-shadow: 0 0 10px var(--color-signal);
+        }
+
+        .fill-hide {
+            background: var(--color-stealth);
+            box-shadow: 0 0 10px var(--color-stealth);
+        }
+
+        .fill-threat {
+            background: var(--color-threat);
+            box-shadow: 0 0 10px var(--color-threat);
+        }
+
+        .exit-btn {
+            margin-top: 5px;
+            padding: 10px;
+            background: rgba(255, 77, 77, 0.1);
+            border: 1px solid var(--color-threat);
+            color: var(--color-threat);
+            cursor: pointer;
+            text-transform: uppercase;
+            width: 100%;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        #winOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 10, 20, 0.95);
+            z-index: 9999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .win-box {
+            border: 2px solid var(--color-ui);
+            padding: 40px;
+            background: rgba(0, 234, 255, 0.05);
+            box-shadow: 0 0 30px rgba(0, 234, 255, 0.2);
+        }
+
+        .win-btn {
+            margin-top: 25px;
+            padding: 15px 40px;
+            background: var(--color-ui);
+            color: #000;
+            border: none;
+            font-family: inherit;
+            font-weight: bold;
+            letter-spacing: 2px;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <div id="schematics-panel">
+            <div class="schematic-trigger" onclick="toggleSchematics()">MISSION LOG</div>
+            <div class="header">SHIP MISSION PARAMETERS</div>
+            <button onclick="exportChecklist()"
+                style="width: 100%; margin: 10px 0; padding: 8px; background: rgba(0, 234, 255, 0.1); border: 1px solid var(--color-ui); color: var(--color-ui); cursor: pointer; font-family: inherit; font-size: 10px; letter-spacing: 1px;">
+                EXPORT
+            </button>
+            <div class="log-display" id="mission-log-content">
+                <div class="log-section-header" style="color: var(--color-speed);">[SPEED] ESCAPE VELOCITY</div>
+                <div id="list-speed"></div>
+                <div class="log-section-header" style="color: var(--color-signal);">[SIGNAL] SOS STRENGTH</div>
+                <div id="list-signal"></div>
+                <div class="log-section-header" style="color: var(--color-stealth);">[STEALTH] EMISSIONS CONTROL</div>
+                <div id="list-hide"></div>
+            </div>
+        </div>
+
+        <div class="map-panel">
+            <div class="map-title">ASTRA-2</div>
+            <div class="ship-grid-container">
+                <div class="ship-map">
+                    <div class="room bridge" style="top:40px; left:320px; width:140px; height:60px;">BRIDGE</div>
+                    <div class="room scanner" style="top:100px; left:320px; width:140px; height:60px;">SCANNER</div>
+                    <div class="room central-hub" style="top:160px; left:320px; width:140px; height:120px;">CENTRAL HUB
+                    </div>
+                    <div class="room security" style="top:280px; left:320px; width:140px; height:60px;">SECURITY</div>
+                    <div class="room power-core" style="top:340px; left:320px; width:160px; height:60px;">POWER CORE
+                    </div>
+                    <div class="room maintenance" style="top:480px; left:320px; width:140px; height:60px;">MAINTENANCE
+                    </div>
+                    <div class="room navigation" style="top:80px; left:180px; width:140px; height:120px;">NAVIGATION
+                    </div>
+                    <div class="room comms" style="top:80px; left:460px; width:140px; height:120px;">COMMS</div>
+                    <div class="room data-core" style="top:240px; left:180px; width:140px; height:60px;">DATA CORE</div>
+                    <div class="room engine" style="top:240px; left:460px; width:140px; height:60px;">ENGINE</div>
+                    <div class="room life-support" style="top:300px; left:180px; width:140px; height:100px;">LIFE
+                        SUPPORT</div>
+                    <div class="room fuel-control" style="top:300px; left:480px; width:120px; height:100px;">FUEL
+                        CONTROL</div>
+                    <div class="room cargo-bay" style="top:400px; left:180px; width:420px; height:80px;">CARGO BAY</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="data-panel">
+            <div class="section-container" style="flex:1.5">
+                <div class="header">SYSTEM VITALITY</div>
+                <div class="log-display">
+                    <div class="progress-container">
+                        <div class="bar-label" style="color:var(--color-speed);"><span>ENGINE SPEED</span><span
+                                id="speed-val">0%</span></div>
+                        <div class="bar-bg">
+                            <div id="speed-bar" class="bar-fill fill-speed"></div>
+                        </div>
+                    </div>
+                    <div class="progress-container">
+                        <div class="bar-label" style="color:var(--color-signal);"><span>SIGNAL STRENGTH</span><span
+                                id="signal-val">0%</span></div>
+                        <div class="bar-bg">
+                            <div id="signal-bar" class="bar-fill fill-signal"></div>
+                        </div>
+                    </div>
+                    <div class="progress-container">
+                        <div class="bar-label" style="color:var(--color-stealth);"><span>STEALTH RATING</span><span
+                                id="hide-val">0%</span></div>
+                        <div class="bar-bg">
+                            <div id="hide-bar" class="bar-fill fill-hide"></div>
+                        </div>
+                    </div>
+                    <div class="progress-container">
+                        <div class="bar-label" style="color:var(--color-threat);"><span>ALIEN PROXIMITY</span><span
+                                id="threat-val">0%</span></div>
+                        <div class="bar-bg">
+                            <div id="threat-bar" class="bar-fill fill-threat"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="section-container" style="flex:2.2">
+                <div class="header">SURVEILLANCE FEED</div>
+                <div id="surv-log" class="log-display"></div>
+            </div>
+            <div class="section-container" style="flex:0.8">
+                <div class="header">NEURAL LINK FEED</div>
+                <div id="neural-log" class="log-display"></div>
+            </div>
+            <button class="exit-btn" onclick="exitDashboard()">Close Dashboard</button>
+        </div>
+    </div>
+
+    <div id="winOverlay">
+        <div class="win-box">
+            <h1 id="winStatusText" style="letter-spacing: 10px;">MISSION COMPLETE</h1>
+            <p id="winDetailText">Ship systems reached operational threshold.</p>
+            <button class="win-btn" id="winConfirmBtn">Initialize Ending Sequence</button>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const overlay = document.getElementById('winOverlay');
+        const winBtn = document.getElementById('winConfirmBtn');
+        const winStatus = document.getElementById('winStatusText');
+        const winDetail = document.getElementById('winDetailText');
+
+        socket.on("TRIGGER_OUTCOME", (fileName) => {
+            if (fileName === "warp.html") {
+                winStatus.innerText = "WARP DRIVE ACTIVE";
+                winDetail.innerText = "Velocity threshold exceeded. Ready for jump.";
+            } else if (fileName === "alienWin.html") {
+                winStatus.innerText = "SHIP COMPROMISED";
+                winStatus.style.color = "var(--color-threat)";
+                winDetail.innerText = "Alien proximity at 100%. Emergency evacuation required.";
+            } else if (fileName === "stealth.html") {
+                winStatus.innerText = "GHOST PROTOCOL";
+                winDetail.innerText = "Emissions stabilized. Ship is invisible to scanners.";
+            } else if (fileName === "signal.html") {
+                winStatus.innerText = "UPLINK ESTABLISHED";
+                winDetail.innerText = "SOS signal broadcasted to Command.";
+            }
+            overlay.style.display = "flex";
+            winBtn.onclick = () => { window.open(fileName, '_blank'); overlay.style.display = "none"; };
+        });
+
+        function toggleSchematics() { document.getElementById('schematics-panel').classList.toggle('open'); }
+        function exitDashboard() { window.parent.postMessage("CLOSE_DASHBOARD", "*"); }
+
+        window.addEventListener("message", (event) => {
+            const { type, payload } = event.data;
+            if (type === 'UPDATE_GAME_STATE') {
+                const game = payload;
+                if (game.bars) {
+                    updateBar('speed', game.bars.speed); updateBar('signal', game.bars.signal);
+                    updateBar('hide', game.bars.hide); updateBar('threat', game.bars.threat);
+                }
+                if (game.players) {
+                    const survLog = document.getElementById('surv-log');
+                    let html = `<span style="color: var(--color-threat);">// LIVE CAM FEED</span><br>`;
+                    Object.keys(game.players).forEach(n => {
+                        const p = game.players[n];
+                        html += `> ${n.toUpperCase()}: ${p.loc}${p.petrified ? ' <span style="color:white;">[FROZEN]</span>' : ''}<br>`;
+                    });
+                    survLog.innerHTML = html;
+                }
+                if (game.tasks) updateMissionLog(game.tasks);
+            }
+            if (type === 'NEW_LOG') {
+                const log = document.getElementById('neural-log');
+                const entry = document.createElement('div');
+                entry.innerHTML = `> ${payload}`;
+                log.prepend(entry);
+            }
+        });
+
+        function updateMissionLog(tasks) {
+            const buckets = { speed: '', signal: '', hide: '' };
+            tasks.forEach(t => {
+                const taskDisplay = `<span class="task-name">${t.name}</span> <span class="task-loc">[${t.loc}]</span>`;
+                const status = t.complete ? `<span class="task-done">✔ ${t.completedBy.toUpperCase()}</span>` : ``;
+                buckets[t.type] += `<div class="task-item">${taskDisplay} ${status}</div>`;
+            });
+            document.getElementById('list-speed').innerHTML = buckets.speed;
+            document.getElementById('list-signal').innerHTML = buckets.signal;
+            document.getElementById('list-hide').innerHTML = buckets.hide;
+        }
+
+        function updateBar(id, val) {
+            const bar = document.getElementById(`${id}-bar`);
+            const txt = document.getElementById(`${id}-val`);
+            if (bar && txt) {
+                const v = Math.max(0, Math.min(100, val || 0));
+                bar.style.width = v + '%'; txt.innerText = v + '%';
+            }
+        }
+    </script>
+    <script src="export-task.js"></script>
+</body>
+
+</html>

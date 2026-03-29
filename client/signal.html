@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signal Victory - Tactical Escort</title>
+    <style>
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: #030306; overflow: hidden;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            flex-direction: column;
+        }
+
+        /* --- 1. Starfield (RETAINED) --- */
+        #starfield { position: absolute; width: 100vw; height: 100vh; z-index: 1; overflow: hidden; }
+        .star { position: absolute; background: #fff; border-radius: 50%; animation: space-drift linear infinite; }
+        @keyframes space-drift { from { transform: translateX(120vw); } to { transform: translateX(-120vw); } }
+
+        /* --- 2. The Ships Container (RETAINED) --- */
+        #rescue-scene {
+            position: relative;
+            width: 600px; height: 350px;
+            z-index: 10;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        /* --- 3. HD ASTRA-2 (RETAINED) --- */
+        #astra2-container {
+            position: relative; width: 420px; height: 140px;
+            z-index: 20; animation: ship-bob 6s ease-in-out infinite;
+        }
+        @keyframes ship-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+
+        .engine-housing {
+            position: absolute; left: 0; top: 35px; width: 90px; height: 70px;
+            background: linear-gradient(90deg, #222, #444); border-radius: 8px 0 0 8px;
+            border: 1px solid #555; box-shadow: inset -10px 0 15px rgba(0,0,0,0.5);
+        }
+        .thruster {
+            position: absolute; left: -18px; width: 35px; height: 28px;
+            background: radial-gradient(circle, #fff 10%, #00eaff 40%, #0044ff 90%);
+            border-radius: 4px; box-shadow: 0 0 15px #00eaff;
+        }
+        .thruster-1 { top: 6px; } .thruster-2 { top: 36px; }
+        .hull {
+            position: absolute; left: 80px; top: 25px; width: 300px; height: 90px;
+            background: linear-gradient(180deg, #666 0%, #333 50%, #222 100%);
+            clip-path: polygon(0% 25%, 75% 0%, 100% 50%, 75% 100%, 0% 75%);
+            border-left: 4px solid #444;
+        }
+        .bridge {
+            position: absolute; left: 140px; top: 0px; width: 110px; height: 35px; 
+            background: #1a1a1a; clip-path: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%);
+            border: 1px solid #444;
+        }
+        .window {
+            position: absolute; left: 15px; top: 8px; width: 80px; height: 12px;
+            background: linear-gradient(180deg, rgba(0, 234, 255, 0.6), rgba(0, 100, 200, 0.8));
+            border-radius: 2px; box-shadow: 0 0 15px rgba(0, 234, 255, 0.4);
+        }
+
+        #signal-ping {
+            position: absolute; left: 185px; top: 10px; width: 20px; height: 20px;
+            border: 2px solid #00eaff; border-radius: 50%; opacity: 0;
+        }
+
+        /* --- 4. THE NEW "COOL" TACTICAL FIGHTER --- */
+        .rescue-fighter {
+            position: absolute;
+            width: 100px; height: 50px;
+            z-index: 5; opacity: 0;
+        }
+
+        /* Main Center Fuselage */
+        .fighter-core {
+            position: absolute; left: 15px; top: 15px;
+            width: 70px; height: 20px;
+            background: #444;
+            clip-path: polygon(0% 0%, 90% 20%, 100% 50%, 90% 80%, 0% 100%);
+            border: 1px solid #666;
+            z-index: 3;
+        }
+
+        /* Split Wing Design (Top & Bottom Fins) */
+        .fighter-wing {
+            position: absolute; left: 5px;
+            width: 50px; height: 12px;
+            background: #555;
+            clip-path: polygon(20% 0%, 100% 30%, 100% 70%, 20% 100%, 0% 50%);
+            border: 1px solid #777;
+            z-index: 2;
+        }
+        .wing-top { top: 5px; transform: rotate(-10deg); }
+        .wing-bottom { bottom: 5px; transform: rotate(10deg); }
+
+        /* Dual Engines */
+        .f-engine {
+            position: absolute; left: -8px;
+            width: 18px; height: 12px;
+            background: radial-gradient(circle, #fff, #ffe600 60%, #ff6a00 90%);
+            border-radius: 2px;
+            box-shadow: 0 0 10px #ffe600;
+        }
+        .fe-1 { top: 5px; }
+        .fe-2 { bottom: 5px; }
+
+        /* Nose Cannons */
+        .cannon {
+            position: absolute; left: 80px; width: 12px; height: 3px;
+            background: #222; border-radius: 0 2px 2px 0;
+        }
+        .cn-1 { top: 18px; }
+        .cn-2 { top: 28px; }
+
+        /* --- 5. ANIMATIONS (RETAINED) --- */
+        .activate-signal #signal-ping { animation: ping-pulse 2s ease-out infinite; opacity: 1; }
+        @keyframes ping-pulse { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(8); opacity: 0; } }
+
+        .activate-signal .fighter-above { 
+            z-index: 15; animation: arrival-above 2.5s ease-out forwards; animation-delay: 0.8s; 
+        }
+        @keyframes arrival-above { 
+            0% { transform: translate(500px, -250px) scaleX(2); opacity: 0; }
+            100% { transform: translate(240px, -25px) scaleX(1); opacity: 1; } 
+        }
+
+        .activate-signal .fighter-below-1 { 
+            z-index: 25; animation: arrival-below-1 2.8s ease-out forwards; animation-delay: 1.2s; 
+        }
+        @keyframes arrival-below-1 { 
+            0% { transform: translate(500px, 250px) scaleX(2); opacity: 0; }
+            100% { transform: translate(220px, 120px) scaleX(1); opacity: 1; }
+        }
+
+        .activate-signal .fighter-below-2 { 
+            z-index: 25; animation: arrival-below-2 3s ease-out forwards; animation-delay: 1.6s; 
+        }
+        @keyframes arrival-below-2 { 
+            0% { transform: translate(-300px, 350px); opacity: 0; }
+            100% { transform: translate(60px, 135px); opacity: 1; }
+        }
+
+        /* --- 6. VICTORY TEXT --- */
+        #victory-text {
+            margin-top: 50px; z-index: 30;
+            color: white; font-size: 2.5rem; text-transform: uppercase;
+            letter-spacing: 15px; opacity: 0; font-weight: bold;
+            text-shadow: 0 0 30px #00eaff;
+        }
+
+        #trigger-btn {
+            position: absolute; bottom: 50px; z-index: 200;
+            padding: 15px 35px; background: rgba(0,0,0,0.8); border: 2px solid #00eaff;
+            color: #00eaff; cursor: pointer; font-size: 18px; letter-spacing: 3px;
+        }
+    </style>
+</head>
+<body>
+
+    <button id="trigger-btn" onclick="triggerCinematic()">SEND MAYDAY SIGNAL</button>
+    <div id="starfield"></div>
+
+    <div id="rescue-scene">
+        <div id="astra2-container">
+            <div id="signal-ping"></div>
+            <div class="engine-housing"><div class="thruster thruster-1"></div><div class="thruster thruster-2"></div></div>
+            <div class="hull"></div>
+            <div class="bridge"><div class="window"></div></div>
+        </div>
+
+        <div class="rescue-fighter fighter-above">
+            <div class="f-engine fe-1"></div><div class="f-engine fe-2"></div>
+            <div class="fighter-wing wing-top"></div>
+            <div class="fighter-core"></div>
+            <div class="fighter-wing wing-bottom"></div>
+            <div class="cannon cn-1"></div><div class="cannon cn-2"></div>
+        </div>
+        
+        <div class="rescue-fighter fighter-below-1">
+            <div class="f-engine fe-1"></div><div class="f-engine fe-2"></div>
+            <div class="fighter-wing wing-top"></div>
+            <div class="fighter-core"></div>
+            <div class="fighter-wing wing-bottom"></div>
+            <div class="cannon cn-1"></div><div class="cannon cn-2"></div>
+        </div>
+        
+        <div class="rescue-fighter fighter-below-2">
+            <div class="f-engine fe-1"></div><div class="f-engine fe-2"></div>
+            <div class="fighter-wing wing-top"></div>
+            <div class="fighter-core"></div>
+            <div class="fighter-wing wing-bottom"></div>
+            <div class="cannon cn-1"></div><div class="cannon cn-2"></div>
+        </div>
+    </div>
+
+    <div id="victory-text">MISSION SUCCESS</div>
+
+    <script>
+        const starfield = document.getElementById('starfield');
+        for (let i = 0; i < 160; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.left = '0px'; 
+            star.style.top = `${Math.random() * 100}vh`;
+            const size = Math.random() * 2.5 + 0.5;
+            star.style.width = `${size}px`; star.style.height = `${size}px`;
+            const duration = Math.random() * 15 + 8;
+            star.style.animationDuration = `${duration}s`;
+            star.style.animationDelay = `${Math.random() * -duration}s`;
+            starfield.appendChild(star);
+        }
+
+        function triggerCinematic() {
+            document.getElementById('trigger-btn').style.display = 'none';
+            document.querySelectorAll('.star').forEach(s => {
+                s.style.transition = "opacity 4s ease-out";
+                s.style.opacity = "0.3"; 
+            });
+            document.getElementById('rescue-scene').classList.add('activate-signal');
+            setTimeout(() => {
+                const vt = document.getElementById('victory-text');
+                vt.style.opacity = '1';
+                vt.style.transition = 'opacity 2s ease-in';
+            }, 4500);
+        }
+    </script>
+</body>
+</html>
