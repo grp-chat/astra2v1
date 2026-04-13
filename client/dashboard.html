@@ -150,6 +150,7 @@
             padding: 15px;
             box-sizing: border-box;
             position: relative;
+            overflow: hidden;
         }
 
         .map-title {
@@ -209,6 +210,8 @@
             padding: 10px;
             box-sizing: border-box;
             gap: 8px;
+            position: relative; /* Required for z-index to work */
+            z-index: 10;        /* Pulls it above the map panel */
         }
 
         .section-container {

@@ -143,6 +143,7 @@ io.on("connection", (socket) => {
         const player = currentGameState.players[playerName];
         const myLoc = player.loc.toUpperCase();
 
+        // --- CORE GAME ACTIONS (Unchanged) ---
         if (actionType === "MOVE" && targetRoom) {
             player.loc = targetRoom;
             io.emit("NEURAL_LOG", `${playerName.toUpperCase()} MOVED TO ${targetRoom}`);
@@ -154,7 +155,6 @@ io.on("connection", (socket) => {
         else if (actionType === "TASK" || actionType === "SABOTAGE") {
             const isSabotage = actionType === "SABOTAGE";
             const config = SABOTAGE_CONFIG[taskType];
-
             if (config) {
                 const barName = config.bar;
                 const change = isSabotage ? -10 : 10;
@@ -162,13 +162,11 @@ io.on("connection", (socket) => {
                     currentGameState.bars[barName] = Math.max(0, Math.min(100, currentGameState.bars[barName] + change));
                 }
             }
-
             const taskInLog = currentGameState.tasks.find(t => t.name === taskName);
             if (taskInLog) {
                 taskInLog.complete = !isSabotage;
                 taskInLog.completedBy = isSabotage ? "" : playerName;
             }
-
             if (isSabotage) {
                 delete currentGameState.roomStatus[taskName];
                 io.emit("NEURAL_LOG", `⚠ ALERT: ${taskName.toUpperCase()} COMPROMISED!`);
@@ -176,8 +174,6 @@ io.on("connection", (socket) => {
                 currentGameState.roomStatus[taskName] = true;
                 io.emit("NEURAL_LOG", `${playerName.toUpperCase()} COMPLETED: ${taskName}`);
             }
-
-            // Check win after bars update
             checkWinConditions(currentGameState);
         }
         else if (actionType === "PETRIFY") {
@@ -198,20 +194,19 @@ io.on("connection", (socket) => {
             }
         }
 
-        currentGameState.turnData.waiting = currentGameState.turnData.waiting.filter(n => n !== playerName);
-        if (!currentGameState.turnData.finished.includes(playerName)) {
-            currentGameState.turnData.finished.push(playerName);
-        }
+        // --- NEW TURN LOGIC: 13 ACTION POOL ---
+        // 1. Add the player to the finished list (allowing duplicates for history)
+        currentGameState.turnData.finished.push(playerName);
 
-        if (currentGameState.turnData.waiting.length === 0) {
+        // 2. Check if the cycle limit is hit
+        if (currentGameState.turnData.finished.length >= 13) {
             currentGameState.bars.threat = Math.min(100, currentGameState.bars.threat + 5);
-
-            // Check win if threat hits 100
             checkWinConditions(currentGameState);
 
-            currentGameState.turnData.waiting = [...currentGameState.turnData.finished];
+            // Clear history for the new round
             currentGameState.turnData.finished = [];
-            io.emit("NEURAL_LOG", `--- NEW ROUND STARTING ---`);
+            
+            io.emit("NEURAL_LOG", `--- 13 ACTIONS REACHED: THREAT LEVEL INCREASED ---`);
             await saveToGitHub(currentGameState);
         }
 

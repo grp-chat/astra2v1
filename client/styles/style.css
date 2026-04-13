@@ -1,7 +1,7 @@
 /* ============================================================
     GLOBAL LAYOUT
 ============================================================ */
-body {
+/* body {
     margin: 0;
     padding: 0;
     font-family: Arial, sans-serif;
@@ -12,7 +12,29 @@ body {
     height: 100vh;
     overflow: hidden;
     background: black;
+} */
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    color: #ffffff;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    /* 🔥 FIX */
+    min-height: 100vh;
+    height: auto;
+
+    /* 🔥 CRITICAL */
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    background: black;
 }
+
 
 /* ============================================================
     BACKGROUND IFRAME (The Astra-2)
@@ -192,7 +214,7 @@ button:disabled {
 /* ============================================================
     DASHBOARD & ACTION PANELS
 ============================================================ */
-#dashboardWrapper, #actionWrapper {
+/* #dashboardWrapper, #actionWrapper {
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;
@@ -202,6 +224,25 @@ button:disabled {
     margin: 0 !important;
     z-index: 9999;
     background: #000;
+} */
+
+#dashboardWrapper, #actionWrapper {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+
+    width: 100vw !important;
+
+    /* 🔥 FIX */
+    height: 100% !important;
+    max-height: 100vh !important;
+
+    padding: 0 !important;
+    margin: 0 !important;
+    z-index: 9999;
+    background: #000;
+
+    overflow: hidden;
 }
 
 #dashboardFrame, #actionFrame {

@@ -31,7 +31,7 @@
             font-family: 'Courier New', monospace;
             display: flex;
             flex-direction: column;
-            height: 100vh;
+            height: 100dvh;
             box-sizing: border-box;
             overflow: hidden;
         }
@@ -41,6 +41,7 @@
             gap: 15px;
             flex: 1;
             padding: 10px;
+            min-height: 0;
         }
 
         .column {
@@ -129,9 +130,11 @@
             grid-template-rows: repeat(2, 1fr);
             gap: 10px;
             flex: 1;
+            min-height: 0;
         }
 
         .action-btn {
+            height: 100%;
             font-size: 0.8rem;
             padding: 5px;
             transition: transform 0.1s;
@@ -241,13 +244,42 @@
         const socket = io();
         let activePlayer = "";
 
+        // socket.on("STATE_UPDATE", (state) => {
+        //     if (state.turnData) {
+        //         const waitingDiv = document.getElementById("waiting-list");
+        //         const finishedDiv = document.getElementById("finished-list");
+        //         waitingDiv.innerHTML = ""; finishedDiv.innerHTML = "";
+
+        //         state.turnData.waiting.forEach(name => {
+        //             const btn = document.createElement("button");
+        //             btn.className = "player-btn";
+        //             btn.textContent = name;
+        //             btn.onclick = () => { activePlayer = name; socket.emit("SELECT_PLAYER", name); };
+        //             waitingDiv.appendChild(btn);
+        //         });
+
+        //         state.turnData.finished.forEach(name => {
+        //             const div = document.createElement("div");
+        //             div.className = "player-finished";
+        //             div.textContent = name + " [OK]";
+        //             finishedDiv.appendChild(div);
+        //         });
+        //     }
+        // });
+
+
+        
+
         socket.on("STATE_UPDATE", (state) => {
             if (state.turnData) {
                 const waitingDiv = document.getElementById("waiting-list");
                 const finishedDiv = document.getElementById("finished-list");
-                waitingDiv.innerHTML = ""; finishedDiv.innerHTML = "";
+                waitingDiv.innerHTML = "";
+                finishedDiv.innerHTML = "";
 
-                state.turnData.waiting.forEach(name => {
+                // 1. Waiting List: Always show all players so they can take multiple actions
+                // We pull names from the main players object to ensure everyone is visible
+                Object.keys(state.players).forEach(name => {
                     const btn = document.createElement("button");
                     btn.className = "player-btn";
                     btn.textContent = name;
@@ -255,106 +287,95 @@
                     waitingDiv.appendChild(btn);
                 });
 
-                state.turnData.finished.forEach(name => {
+                // 2. Finished List: Show total counter and scrolling history
+                const counterDisplay = document.createElement("div");
+                counterDisplay.className = "player-finished";
+                counterDisplay.style.color = "var(--color-speed)";
+                counterDisplay.style.borderBottom = "1px solid var(--color-speed)";
+                counterDisplay.style.marginBottom = "10px";
+                counterDisplay.style.fontWeight = "bold";
+                counterDisplay.textContent = `ROUND PROGRESS: ${state.turnData.finished.length} / 13`;
+                finishedDiv.appendChild(counterDisplay);
+
+                state.turnData.finished.forEach((name, index) => {
                     const div = document.createElement("div");
                     div.className = "player-finished";
-                    div.textContent = name + " [OK]";
+                    div.style.fontSize = "0.8rem";
+                    div.style.padding = "8px";
+                    div.style.borderBottom = "1px solid rgba(0, 234, 255, 0.1)";
+                    div.textContent = `${index + 1}. ${name.toUpperCase()} [OK]`;
                     finishedDiv.appendChild(div);
                 });
+
+                // Scroll the finished list to the bottom automatically
+                finishedDiv.scrollTop = finishedDiv.scrollHeight;
             }
         });
 
+
         socket.on("PLAYER_SCREEN_LOAD", (data) => {
+            // 1. Switch Screens
             document.getElementById("lobby-screen").style.display = "none";
-            document.getElementById("action-screen").style.display = "flex";
+            const actionScreen = document.getElementById("action-screen");
+            actionScreen.style.display = "flex";
 
-            const userIdSpan = document.getElementById("user-id");
-            userIdSpan.textContent = `USER: ${data.playerName.toUpperCase()}${data.isPetrified ? ' [FROZEN]' : ''}`;
+            // 2. Update Header Info
+            document.getElementById("user-id").textContent = `USER: ${data.playerName.toUpperCase()}`;
+            document.getElementById("loc-id").textContent = `LOC: ${data.location.toUpperCase()}`;
 
-            // This now uses your Master Speed Color (Neon Azure) for the active user name
-            userIdSpan.style.color = data.isPetrified ? "var(--color-threat)" : "var(--color-speed)";
+            // 3. Update Vision & Alien Team
+            const occupantsDiv = document.getElementById("room-occupants");
+            const visionText = data.roomMates.length > 0 ? `VISIBLE: ${data.roomMates.join(", ")}` : "NO LIFEFORMS DETECTED";
 
-            document.getElementById("loc-id").textContent = `LOC: ${data.location}`;
-
-            // --- FIX STARTS HERE ---
-            const occupantDiv = document.getElementById("room-occupants");
-
-            // Create the Vision string
-            const visionHTML = (data.roomMates.length > 0)
-                ? `<span style="color: var(--color-ui);">VISION:</span> ${data.roomMates.join(", ").toUpperCase()}`
-                : `<span style="color: #666;">VISION: NO LIFEFORMS</span>`;
-
-            // Create the Alien Team string (only if user is alien)
-            let alienHTML = "";
-            if (data.isAlien && data.alienTeam) {
-                alienHTML = `<span class="alien-team-display">ALIENS: ${data.alienTeam.join(", ")}</span>`;
+            let alienDisplay = "";
+            if (data.isAlien) {
+                alienDisplay = `<span class="alien-team-display">ALIENS: ${data.alienTeam.join(", ")}</span>`;
             }
+            occupantsDiv.innerHTML = `<div>${visionText}</div> ${alienDisplay}`;
 
-            // Apply to the div
-            occupantDiv.innerHTML = `<div>${visionHTML}</div><div>${alienHTML}</div>`;
-            // fix ends here
-
-            // const occupantDiv = document.getElementById("room-occupants");
-            occupantDiv.innerHTML = `
-                <div>${visionHTML}</div>
-                <div>${alienHTML}</div>`;
-            // occupantDiv.innerHTML = (data.roomMates.length > 0)
-            //     ? `<span style="color: var(--color-ui);">RANGE OF VISION:</span> ${data.roomMates.join(", ").toUpperCase()}`
-            //     : `<span style="color: #888;">RANGE OF VISION: NO LIFEFORMS</span>`;
-
+            // 4. Build Action Grid
             const grid = document.getElementById("grid");
             grid.innerHTML = "";
 
-            data.buttons.forEach(btnData => {
-                const btn = document.createElement("button");
-                btn.className = "action-btn";
+            data.buttons.forEach(btn => {
+                const b = document.createElement("button");
+                b.className = "action-btn";
 
-                if (typeof btnData === "string") {
-                    btn.textContent = (btnData === "BLANK") ? "---" : btnData;
-
-                    if (btnData === "BLANK") {
-                        btn.classList.add("blank");
-                    } else if (btnData === "MOVE") {
-                        btn.onclick = () => showTargetOverlay("SELECT DESTINATION", data.adjacentRooms, (r) => {
-                            submitAction("MOVE", { targetRoom: r });
+                if (btn === "BLANK") {
+                    b.classList.add("blank");
+                    b.textContent = "---";
+                } else if (btn === "SKIP") {
+                    b.textContent = data.isPetrified ? "RECOVER" : "SKIP TURN";
+                    if (data.isPetrified) b.classList.add("petrified-skip");
+                    b.onclick = () => submitAction("SKIP");
+                } else if (btn === "MOVE") {
+                    b.textContent = "MOVE";
+                    b.onclick = () => showTargetOverlay("SELECT DESTINATION", data.adjacentRooms, (room) => {
+                        submitAction("MOVE", { targetRoom: room });
+                    });
+                } else if (btn === "PETRIFY") {
+                    b.textContent = "PETRIFY";
+                    b.style.color = "var(--color-threat)";
+                    b.onclick = () => {
+                        if (data.roomMates.length === 0) return alert("NO TARGETS IN ROOM");
+                        showTargetOverlay("SELECT VICTIM", data.roomMates, (victim) => {
+                            submitAction("PETRIFY", { targetPlayer: victim });
                         });
-                    } else if (btnData === "SKIP") {
-                        if (data.isPetrified) {
-                            btn.textContent = "RECOVER";
-                            btn.classList.add("petrified-skip");
-                        }
-                        btn.onclick = () => submitAction("SKIP");
-                    } else if (btnData === "PETRIFY") {
-                        btn.style.color = btn.style.borderColor = "var(--color-threat)";
-                        btn.onclick = () => {
-                            if (!data.roomMates.length) {
-                                submitAction("PETRIFY");
-                            } else {
-                                showTargetOverlay("SELECT VICTIM", data.roomMates, (v) => {
-                                    submitAction("PETRIFY", { targetPlayer: v });
-                                });
-                            }
-                        };
-                    }
-                }
-                else {
-                    const isSab = !!btnData.isSabotage;
-                    btn.textContent = isSab ? `SAB: ${btnData.name}` : btnData.name;
-                    if (isSab) btn.classList.add("sabotage-btn");
+                    };
+                } else {
+                    // It's a Task or Sabotage
+                    b.textContent = btn.name;
+                    b.style.borderColor = btn.color;
+                    if (btn.isSabotage) b.classList.add("sabotage-btn");
 
-                    if (btnData.color) {
-                        btn.style.color = btnData.color;
-                        btn.style.border = `2px ${isSab ? 'dashed' : 'solid'} ${btnData.color}`;
-                    }
-
-                    btn.onclick = () => {
-                        submitAction(isSab ? "SABOTAGE" : "TASK", {
-                            taskName: btnData.name,
-                            taskType: btnData.type
+                    b.onclick = () => {
+                        submitAction(btn.isSabotage ? "SABOTAGE" : "TASK", {
+                            taskName: btn.name,
+                            taskType: btn.type
                         });
                     };
                 }
-                grid.appendChild(btn);
+                grid.appendChild(b);
             });
         });
 
