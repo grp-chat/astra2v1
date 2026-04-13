@@ -200,7 +200,7 @@ io.on("connection", (socket) => {
 
         // 2. Check if the cycle limit is hit
         if (currentGameState.turnData.finished.length >= 13) {
-            currentGameState.bars.threat = Math.min(100, currentGameState.bars.threat + 5);
+            currentGameState.bars.threat = Math.min(100, currentGameState.bars.threat + 10);
             checkWinConditions(currentGameState);
 
             // Clear history for the new round
