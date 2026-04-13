@@ -194,19 +194,19 @@ io.on("connection", (socket) => {
             }
         }
 
-        // --- NEW TURN LOGIC: 13 ACTION POOL ---
+        // --- NEW TURN LOGIC: 12 ACTION POOL ---
         // 1. Add the player to the finished list (allowing duplicates for history)
         currentGameState.turnData.finished.push(playerName);
 
         // 2. Check if the cycle limit is hit
-        if (currentGameState.turnData.finished.length >= 13) {
+        if (currentGameState.turnData.finished.length >= 12) {
             currentGameState.bars.threat = Math.min(100, currentGameState.bars.threat + 10);
             checkWinConditions(currentGameState);
 
             // Clear history for the new round
             currentGameState.turnData.finished = [];
             
-            io.emit("NEURAL_LOG", `--- 13 ACTIONS REACHED: THREAT LEVEL INCREASED ---`);
+            io.emit("NEURAL_LOG", `--- 12 ACTIONS REACHED: THREAT LEVEL INCREASED ---`);
             await saveToGitHub(currentGameState);
         }
 
