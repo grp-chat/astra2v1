@@ -80,7 +80,7 @@
 
         .player-btn {
             padding: 12px;
-            font-size: 1rem;
+            font-size: 1.05rem;
         }
 
         .player-btn:hover {
@@ -110,6 +110,7 @@
         }
 
         .header-top {
+            font-size: 1.5rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -117,7 +118,7 @@
         }
 
         .occupant-bar {
-            font-size: 0.75rem;
+            font-size: 1.5rem;
             border-top: 1px solid rgba(0, 234, 255, 0.2);
             padding-top: 5px;
             color: var(--color-ui);
@@ -135,7 +136,7 @@
 
         .action-btn {
             height: 100%;
-            font-size: 0.8rem;
+            font-size: 1.2rem;
             padding: 5px;
             transition: transform 0.1s;
         }
@@ -188,7 +189,7 @@
         }
 
         .occupant-bar {
-            font-size: 0.75rem;
+            font-size: 1.3rem;
             border-top: 1px solid rgba(0, 234, 255, 0.2);
             padding-top: 5px;
             color: var(--color-ui);
@@ -203,6 +204,43 @@
             font-weight: bold;
             text-shadow: 0 0 8px rgba(255, 218, 185, 0.4);
         }
+
+        .manual-save-trigger {
+            position: absolute;
+            bottom: 20px;
+            right: 10px;
+            background: rgba(0, 234, 255, 0.05);
+            border: 1px solid rgba(0, 234, 255, 0.4);
+            color: var(--color-ui);
+            font-family: inherit;
+            font-size: 9px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            padding: 6px 10px;
+            cursor: pointer;
+            z-index: 10;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            text-transform: uppercase;
+        }
+
+        .manual-save-trigger:hover {
+            background: var(--color-ui);
+            color: #000;
+            box-shadow: 0 0 10px var(--color-ui);
+        }
+
+        .save-icon {
+            font-size: 11px;
+        }
+
+        /* We need to add padding to the bottom of the list 
+   so the last names aren't covered by the button */
+        #finished-list {
+            padding-bottom: 40px;
+        }
     </style>
 </head>
 
@@ -213,9 +251,13 @@
             <h3>[ WAITING ]</h3>
             <div id="waiting-list" class="player-list"></div>
         </div>
-        <div class="column">
+        <div class="column" , style="position: relative;">
             <h3>[ FINISHED ]</h3>
             <div id="finished-list" class="player-list"></div>
+
+            <button class="manual-save-trigger" onclick="triggerManualSave()">
+                <span class="save-icon">💾</span> ARCHIVE STATE
+            </button>
         </div>
         <div style="position: absolute; bottom: 10px; right: 20px;" onclick="exitTerminal()" class="exit-link">
             BACK TO MAIN MENU</div>
@@ -268,7 +310,7 @@
         // });
 
 
-        
+
 
         socket.on("STATE_UPDATE", (state) => {
             if (state.turnData) {
@@ -419,6 +461,38 @@
 
         function exitTerminal() {
             window.parent.postMessage("CLOSE_ACTION", "*");
+        }
+
+        async function triggerManualSave() {
+            const btn = document.querySelector(".manual-save-trigger");
+            const originalText = btn.innerHTML;
+
+            try {
+                btn.innerHTML = `<span class="save-icon">⏳</span> SAVING...`;
+
+                // 1. Get the current state from the server's memory
+                const response = await fetch("/current-game");
+                const result = await response.json();
+
+                if (result.success) {
+                    // 2. Send it back to the /save-game route you already built
+                    await fetch("/save-game", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(result.data)
+                    });
+
+                    btn.innerHTML = `<span class="save-icon">✅</span> SAVED!`;
+                    btn.style.color = "var(--color-signal)";
+                }
+            } catch (err) {
+                btn.innerHTML = `<span class="save-icon">❌</span> ERROR`;
+            }
+
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.style.color = "";
+            }, 2000);
         }
     </script>
 </body>

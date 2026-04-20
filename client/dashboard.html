@@ -62,7 +62,8 @@
             backdrop-filter: blur(1px);
         }
 
-        #schematics-panel {
+        #schematics-panel,
+        #mission-panel {
             position: absolute;
             top: 0;
             right: 0;
@@ -80,7 +81,7 @@
             flex-direction: column;
         }
 
-        #schematics-panel.open {
+        #schematics-panel.open, #mission-panel.open {
             transform: translateX(0);
         }
 
@@ -102,6 +103,34 @@
             font-size: 10px;
             letter-spacing: 2px;
             color: var(--color-ui);
+            text-transform: uppercase;
+        }
+
+
+
+        /* Move the new tab lower and give it a different color */
+        .mission-trigger {
+            /* Copy-paste the .schematic-trigger styles here, then change these: */
+            top: 410px;
+            background: rgba(170, 0, 255, 0.2);
+            color: var(--color-stealth);
+            border-color: var(--color-stealth);
+
+            /* Ensure the rest of the tab styling matches */
+            position: absolute;
+            left: -25px;
+            width: 25px;
+            height: 110px;
+            border: 1px solid var(--color-stealth);
+            border-right: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            font-size: 10px;
+            letter-spacing: 2px;
             text-transform: uppercase;
         }
 
@@ -210,8 +239,10 @@
             padding: 10px;
             box-sizing: border-box;
             gap: 8px;
-            position: relative; /* Required for z-index to work */
-            z-index: 10;        /* Pulls it above the map panel */
+            position: relative;
+            /* Required for z-index to work */
+            z-index: 10;
+            /* Pulls it above the map panel */
         }
 
         .section-container {
@@ -355,6 +386,16 @@
             </div>
         </div>
 
+        <div id="mission-panel" class="schematics-panel-base">
+            <div class="mission-trigger" onclick="toggleMission()">STORY LOG</div>
+            <div class="header">VOYAGE ARCHIVE</div>
+            <div class="log-display" id="story-log-content">
+                <div style="color: gray; font-style: italic;">No mission logs recorded...</div>
+            </div>
+        </div>
+
+
+
         <div class="map-panel">
             <div class="map-title">ASTRA-2</div>
             <div class="ship-grid-container">
@@ -464,6 +505,18 @@
         });
 
         function toggleSchematics() { document.getElementById('schematics-panel').classList.toggle('open'); }
+        function toggleMission() {
+            const missionPanel = document.getElementById('mission-panel');
+            const schematicPanel = document.getElementById('schematics-panel');
+
+            // Toggle this one
+            missionPanel.classList.toggle('open');
+
+            // Auto-close the other one so they don't overlap
+            if (missionPanel.classList.contains('open')) {
+                schematicPanel.classList.remove('open');
+            }
+        }
         function exitDashboard() { window.parent.postMessage("CLOSE_DASHBOARD", "*"); }
 
         window.addEventListener("message", (event) => {
