@@ -199,14 +199,14 @@ io.on("connection", (socket) => {
         currentGameState.turnData.finished.push(playerName);
 
         // 2. Check if the cycle limit is hit
-        if (currentGameState.turnData.finished.length >= 12) {
+        if (currentGameState.turnData.finished.length >= 11) {
             currentGameState.bars.threat = Math.min(100, currentGameState.bars.threat + 10);
             checkWinConditions(currentGameState);
 
             // Clear history for the new round
             currentGameState.turnData.finished = [];
             
-            io.emit("NEURAL_LOG", `--- 12 ACTIONS REACHED: THREAT LEVEL INCREASED ---`);
+            io.emit("NEURAL_LOG", `--- 11 ACTIONS REACHED: THREAT LEVEL INCREASED ---`);
             await saveToGitHub(currentGameState);
         }
 
