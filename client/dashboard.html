@@ -538,6 +538,7 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
+        let tasksPlaced = false; // Add this at the top
         const overlay = document.getElementById('winOverlay');
         const winBtn = document.getElementById('winConfirmBtn');
         const winStatus = document.getElementById('winStatusText');
@@ -581,6 +582,12 @@
             const { type, payload } = event.data;
             if (type === 'UPDATE_GAME_STATE') {
                 const game = payload;
+                // Draw dots ONLY once, the very first time tasks are detected
+                if (game.tasks && !tasksPlaced) {
+                    renderStaticTaskDots(game.tasks);
+                    tasksPlaced = true;
+                }
+
                 if (game.bars) {
                     updateBar('speed', game.bars.speed); updateBar('signal', game.bars.signal);
                     updateBar('hide', game.bars.hide); updateBar('threat', game.bars.threat);
@@ -657,6 +664,36 @@
                     if (players[name].petrified) label.style.background = "#fff";
 
                     roomOccupancy[loc].appendChild(label);
+                }
+            });
+        }
+
+        // The actual injection function
+        function renderStaticTaskDots(tasks) {
+            // 1. Create a map to group tasks by room
+            const roomTasks = {};
+
+            tasks.forEach(t => {
+                const roomClass = t.loc.toLowerCase().replace(/\s+/g, '-');
+                if (!roomTasks[roomClass]) roomTasks[roomClass] = []; // Use an Array, not a Set
+                roomTasks[roomClass].push(t.type); // Push every single task type
+            });
+
+            // 2. Inject dots into the rooms
+            Object.keys(roomTasks).forEach(roomClass => {
+                const roomEl = document.querySelector(`.room.${roomClass}`);
+                if (roomEl) {
+                    const container = document.createElement('div');
+                    container.className = 'task-indicators';
+
+                    // 3. This will now loop through every single task in the array
+                    roomTasks[roomClass].forEach(type => {
+                        const dot = document.createElement('div');
+                        dot.className = `t-dot dot-${type}`;
+                        container.appendChild(dot);
+                    });
+
+                    roomEl.appendChild(container);
                 }
             });
         }
