@@ -336,7 +336,7 @@
                 counterDisplay.style.borderBottom = "1px solid var(--color-speed)";
                 counterDisplay.style.marginBottom = "10px";
                 counterDisplay.style.fontWeight = "bold";
-                counterDisplay.textContent = `ROUND PROGRESS: ${state.turnData.finished.length} / 11`;
+                counterDisplay.textContent = `ROUND PROGRESS: ${state.turnData.finished.length} / 6`;
                 finishedDiv.appendChild(counterDisplay);
 
                 state.turnData.finished.forEach((name, index) => {
@@ -420,6 +420,29 @@
                 grid.appendChild(b);
             });
         });
+
+        // Add this inside the <script> tag in action.html
+        socket.on("SAVE_STATUS", (status) => {
+            const btn = document.querySelector(".manual-save-trigger");
+            if (!btn) return;
+
+            if (status === "SAVING") {
+                btn.innerHTML = `<span class="save-icon">⏳</span> AUTOSAVING...`;
+                btn.style.color = "var(--color-speed)";
+            }
+            else if (status === "SUCCESS") {
+                btn.innerHTML = `<span class="save-icon">✅</span> ARCHIVED!`;
+                btn.style.color = "var(--color-signal)";
+
+                setTimeout(() => {
+                    btn.innerHTML = `<span class="save-icon">💾</span> ARCHIVE STATE`;
+                    btn.style.color = "";
+                }, 2000);
+            }
+        });
+
+
+
 
         function submitAction(type, extraData = {}) {
             socket.emit("SUBMIT_ACTION", {
