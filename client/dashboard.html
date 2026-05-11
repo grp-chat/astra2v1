@@ -81,7 +81,8 @@
             flex-direction: column;
         }
 
-        #schematics-panel.open, #mission-panel.open {
+        #schematics-panel.open,
+        #mission-panel.open {
             transform: translateX(0);
         }
 
@@ -364,6 +365,63 @@
             cursor: pointer;
             text-transform: uppercase;
         }
+
+        /* Player Labels on Map */
+        .player-marker {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            pointer-events: none;
+            /* Allows clicking through to the room */
+            z-index: 10;
+        }
+
+        .p-label {
+            background: var(--color-ui);
+            color: #000;
+            font-size: 8px;
+            padding: 1px 3px;
+            margin-bottom: 1px;
+            border-radius: 2px;
+            text-transform: uppercase;
+            font-weight: bold;
+            white-space: nowrap;
+            box-shadow: 0 0 5px rgba(0, 234, 255, 0.5);
+        }
+
+        .task-indicators {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            display: flex;
+            gap: 3px;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .t-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+
+        .dot-speed {
+            background: var(--color-speed);
+            box-shadow: 0 0 5px var(--color-speed);
+        }
+
+        .dot-signal {
+            background: var(--color-signal);
+            box-shadow: 0 0 5px var(--color-signal);
+        }
+
+        .dot-hide {
+            background: var(--color-stealth);
+            box-shadow: 0 0 5px var(--color-stealth);
+        }
     </style>
 </head>
 
@@ -530,6 +588,9 @@
                 if (game.players) {
                     const survLog = document.getElementById('surv-log');
                     let html = `<span style="color: var(--color-threat);">// LIVE CAM FEED</span><br>`;
+
+                    updatePlayerMarkers(game.players);
+
                     Object.keys(game.players).forEach(n => {
                         const p = game.players[n];
                         html += `> ${n.toUpperCase()}: ${p.loc}${p.petrified ? ' <span style="color:white;">[FROZEN]</span>' : ''}<br>`;
@@ -565,6 +626,39 @@
                 const v = Math.max(0, Math.min(100, val || 0));
                 bar.style.width = v + '%'; txt.innerText = v + '%';
             }
+        }
+
+        function updatePlayerMarkers(players) {
+            // 1. Remove all old markers first
+            document.querySelectorAll('.player-marker').forEach(m => m.remove());
+
+            // 2. Map players to their rooms
+            const roomOccupancy = {};
+
+            Object.keys(players).forEach(name => {
+                const loc = players[name].loc.toLowerCase().replace(/\s+/g, '-');
+                const roomEl = document.querySelector(`.room.${loc}`);
+
+                if (roomEl) {
+                    // Create the container if it doesn't exist for this room
+                    if (!roomOccupancy[loc]) {
+                        const container = document.createElement('div');
+                        container.className = 'player-marker';
+                        roomEl.appendChild(container);
+                        roomOccupancy[loc] = container;
+                    }
+
+                    // Add the player's name label
+                    const label = document.createElement('div');
+                    label.className = 'p-label';
+                    label.innerText = name;
+
+                    // Optional: color frozen players differently
+                    if (players[name].petrified) label.style.background = "#fff";
+
+                    roomOccupancy[loc].appendChild(label);
+                }
+            });
         }
     </script>
     <script src="export-task.js"></script>
